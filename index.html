@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tasks</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <main class="sheet">
+    <header class="head">
+      <h1>{% if left == 0 and total > 0 %}All clear{% else %}{{ left }} to do{% endif %}</h1>
+      <p class="sub">{{ done }} of {{ total }} finished</p>
+      {% if total %}
+      <div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="{{ total }}" aria-valuenow="{{ done }}">
+        <span style="width: {{ (done / total * 100)|round|int }}%"></span>
+      </div>
+      {% endif %}
+    </header>
+
+    <form class="add" action="{{ url_for('add') }}" method="post">
+      <input type="hidden" name="view" value="{{ view }}">
+      <label class="sr" for="new-title">New task</label>
+      <input id="new-title" name="title" maxlength="200" placeholder="What needs doing?" autocomplete="off" autofocus required>
+      <button type="submit">Add task</button>
+    </form>
+
+    <nav class="tabs" aria-label="Filter tasks">
+      <a href="{{ url_for('index', view='all') }}" {% if view == 'all' %}aria-current="page"{% endif %}>All</a>
+      <a href="{{ url_for('index', view='active') }}" {% if view == 'active' %}aria-current="page"{% endif %}>To do</a>
+      <a href="{{ url_for('index', view='done') }}" {% if view == 'done' %}aria-current="page"{% endif %}>Done</a>
+    </nav>
+
+    <ul class="list">
+      {% for t in todos %}
+      <li class="item {{ 'is-done' if t.done }}">
+        <form action="{{ url_for('toggle', todo_id=t.id) }}" method="post">
+          <input type="hidden" name="view" value="{{ view }}">
+          <button class="check" type="submit" aria-label="{{ 'Mark as to do' if t.done else 'Mark as done' }}">
+            <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10.5l4 4 8-9"/></svg>
+          </button>
+        </form>
+
+        <details class="row">
+          <summary><span class="title">{{ t.title }}</span></summary>
+          <form class="edit" action="{{ url_for('edit', todo_id=t.id) }}" method="post">
+            <input type="hidden" name="view" value="{{ view }}">
+            <input name="title" value="{{ t.title }}" maxlength="200" required aria-label="Task title">
+            <button type="submit">Save</button>
+          </form>
+        </details>
+
+        <form action="{{ url_for('delete', todo_id=t.id) }}" method="post">
+          <input type="hidden" name="view" value="{{ view }}">
+          <button class="del" type="submit" aria-label="Delete task">Delete</button>
+        </form>
+      </li>
+      {% else %}
+      <li class="empty">
+        {% if view == 'done' %}Nothing finished yet. Tick a task to see it here.
+        {% elif view == 'active' %}No open tasks. Add one above.
+        {% else %}Your list is empty. Add your first task above.{% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+
+    {% if done %}
+    <form class="clear" action="{{ url_for('clear_done') }}" method="post">
+      <input type="hidden" name="view" value="{{ view }}">
+      <button type="submit">Clear {{ done }} finished</button>
+    </form>
+    {% endif %}
+  </main>
+</body>
+</html>
